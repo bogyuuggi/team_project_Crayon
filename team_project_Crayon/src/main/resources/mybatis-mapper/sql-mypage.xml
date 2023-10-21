@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.sample1.mapper.MypageMapper">
+	
+	<!-- 유저 프로필 정보 변경 (닉네임, 이름) -->
+	<update id="updateUserProfill" parameterType="hashmap">
+		UPDATE T1_USER_TBL
+  			SET
+			<if test="nickName != '' and nickName != null">
+				USER_NICKNAME = #{nickName}
+			</if>
+			<if test="userName != '' and userName != null">
+				USER_NAME = #{userName}
+			</if>
+			WHERE USER_ID = #{uId}
+		
+	</update>
+	<!-- 프로필 사진 출력 -->
+	<select id="selectUserImg" parameterType="hashmap"
+		resultType="com.example.sample1.model.Mypage">
+		SELECT * 
+		FROM T1_USER_IMAGE
+		WHERE USER_ID = #{uId}		
+	</select>
+	
+	<!-- 프로필 이미지 변경 -->
+	<update id="updateUserImg" parameterType="hashmap">
+		UPDATE T1_USER_IMAGE
+		SET 
+			USER_IMG = #{path},
+			USER_IMG_NAME = #{filename}
+		WHERE USER_ID = #{uId}	
+	</update>
+	
+	<!-- 유저 포인트 사용내역 출력 -->
+	<select id="selectUserPointList" parameterType="hashmap"
+   		resultType="com.example.sample1.model.Mypage">
+   			SELECT *
+			FROM T1_USER_POINT
+			WHERE USER_ID = #{uId}
+			ORDER BY POINT_DATE DESC
+   	</select>
+   	
+   	<!-- 유저 계좌 입력 -->
+   	<insert id="insertUserAccount" parameterType="hashmap">
+   			INSERT INTO T1_USER_ACCOUNT
+   			VALUES (#{uId}, #{uBank}, #{uAccount}, #{aName})
+   			
+   	</insert>
+   	 
+   	<select id="selectUserLikeList" parameterType="hashmap"
+   		resultType="com.example.sample1.model.Product">
+   			SELECT *
+			FROM T1_PRODUCT_LIKE L
+			INNER JOIN T1_USER_TBL U
+			ON L.USER_ID = U.USER_ID
+			INNER JOIN T1_PRODUCT_UPDATE P
+			ON P.PRODUCT_SELL_NUMBER = L.PRODUCT_MODEL
+			INNER JOIN T1_PRODUCT_SIZE S
+			ON S.PRODUCT_SIZE = P.PRODUCT_SIZE
+			INNER JOIN T1_PRODUCT_IMG I
+			ON I.PRODUCT_NAME = P.PRODUCT_NAME
+			INNER JOIN T1_PRODUCT_BRAND B
+			ON B.PRODUCT_BRAND = P.PRODUCT_BRAND
+			WHERE L.USER_ID = #{uId}
+			GROUP BY L.PRODUCT_MODEL	
+   	</select>
+   	
+   	
+   	
+   	<!-- 유저 구매입찰 갯수 -->
+   	<select id="selectUserBuyCount"  parameterType="hashmap" resultType="int" >
+   			SELECT COUNT(*) 
+			FROM T1_PRODUCT_UPDATE 
+			WHERE USER_ID = #{uId} AND SELLBUY = 'B' 
+   	</select>
+   	
+   	<!-- 유저 판매입찰 갯수 -->
+   	<select id="selectUserSellCount"  parameterType="hashmap" resultType="int">
+   			SELECT COUNT(*) 
+			FROM T1_PRODUCT_UPDATE 
+			WHERE USER_ID = #{uId} AND SELLBUY = 'S'
+   	</select>
+   	
+   	<!-- 유저 구매완료 -->
+   	<select id="selectUserBuyCommitCount"  parameterType="hashmap" resultType="int">
+   			SELECT COUNT(*)
+			FROM T1_TRANSACTION 
+			WHERE BUSER = #{uId}
+   	</select>
+   	
+   	<!-- 유저 판매완료 -->
+   	<select id="selectUserSellCommitCount"  parameterType="hashmap" resultType="int">
+   			SELECT COUNT(*)
+			FROM T1_TRANSACTION 
+			WHERE SUSER = #{uId}
+   	</select>
+   
+    <!-- 유저의 구매 리스트  -->
+    <select id="selectUserBuyList" parameterType="hashmap"
+   		resultType="com.example.sample1.model.Product">
+   			SELECT * 
+			FROM T1_TRANSACTION T
+			INNER JOIN T1_PRODUCT_UPDATE U
+			ON T.PRODUCT_SELL_NUMBER = U.PRODUCT_SELL_NUMBER
+			INNER JOIN T1_PRODUCT_SIZE S
+			ON S.PRODUCT_SIZE = U.PRODUCT_SIZE
+			WHERE T.BUSER = #{uId}
+			ORDER BY T.TRANSACTION_DATE DESC
+   	</select>
+   	
+   	
+   	<!-- 유저의 판매 리스트  -->
+   	<select id="selectUserSellList" parameterType="hashmap"
+   		resultType="com.example.sample1.model.Product">
+   			SELECT * 
+			FROM T1_TRANSACTION T
+			INNER JOIN T1_PRODUCT_UPDATE U
+			ON T.PRODUCT_SELL_NUMBER = U.PRODUCT_SELL_NUMBER
+			INNER JOIN T1_PRODUCT_SIZE S
+			ON S.PRODUCT_SIZE = U.PRODUCT_SIZE
+			WHERE T.SUSER = #{uId}	
+			ORDER BY T.TRANSACTION_DATE DESC
+   	</select>
+   	
+   	
+</mapper>

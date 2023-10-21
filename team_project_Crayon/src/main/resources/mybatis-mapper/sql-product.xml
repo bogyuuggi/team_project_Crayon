@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.sample1.mapper.ProductMapper">
+	<!-- 상품등록 -->
+	<insert id="insertProduct" parameterType="hashmap">
+		INSERT INTO T1_PRODUCT_UPDATE
+			(PRODUCT_MODEL, PRODUCT_NAME, PRODUCT_KNAME, PRODUCT_SIZE, PRODUCT_PRICE, PRODUCT_UPDATE, PRODUCT_ENDDATE, USER_ID, SELLBUY, PRODUCT_COLOR,
+				PRODUCT_LAUNCH_PRICE, PRODUCT_CATEGORIE1, PRODUCT_CATEGORIE2,PRODUCT_BRAND)
+		VALUES
+			(#{pModel}, #{pName}, #{kName}, #{pSize}, #{pPrice}, CURRENT_TIMESTAMP, #{endDate}, #{uId}, #{sellBuy}, #{pColor}, #{launch}, #{pCategorie1}, #{pCategorie2}, #{brand})
+	</insert>
+	
+	<!-- 상품이미지 업로드 -->
+	<insert id="insertProductImg" parameterType="hashmap">
+		INSERT INTO T1_PRODUCT_IMG(PRODUCT_NAME, P_IMG_PATH, P_IMG_NAME)
+		VALUES
+			(#{pName}, #{pImgPath}, #{pImgName})
+	</insert>
+	
+	<!-- 상품 이미지 불러오기 -->
+	<select id="selectProductImg" parameterType="hashmap"
+		resultType="com.example.sample1.model.Product">
+		SELECT U.PRODUCT_NAME, I.P_IMG_PATH, I.P_IMG_NAME
+		FROM T1_PRODUCT_UPDATE U
+		INNER JOIN T1_PRODUCT_IMG AS I
+			ON U.PRODUCT_NAME = I.PRODUCT_NAME
+		WHERE I.PRODUCT_NAME = #{pName}
+		LIMIT 1
+	</select>
+	
+	<!-- 사이즈 조회 -->
+	<select id="selectSize" parameterType="hashmap" resultType="com.example.sample1.model.Product">
+		SELECT *
+		FROM T1_PRODUCT_SIZE
+	</select>
+	
+	<!--판매/구매 사이즈 조회 -->
+	<select id="selectPaySize" parameterType="hashmap" resultType="Integer">
+		SELECT SIZE
+		FROM T1_PRODUCT_SIZE
+		WHERE PRODUCT_SIZE = #{productSize}
+	</select>
+	
+	<!-- 브랜드 조회 -->
+	<select id="selectBrand" resultType="com.example.sample1.model.Product">
+		SELECT *
+		FROM T1_PRODUCT_BRAND
+	</select>
+	
+	<!-- 브랜드 이름 직접입력 -->
+	<insert id="insertBrand" parameterType="hashmap">
+		INSERT INTO T1_PRODUCT_BRAND(BRAND_NAME)
+		VALUES (#{brandName})
+	</insert>
+	
+	<!-- 상품 상세정보 -->
+	<select id="selectProductInfo" parameterType="hashmap"
+		resultType="com.example.sample1.model.Product">
+		SELECT * FROM T1_PRODUCT_UPDATE U 
+		INNER JOIN T1_PRODUCT_BRAND B
+		ON U.PRODUCT_BRAND = B.PRODUCT_BRAND
+		INNER JOIN T1_PRODUCT_IMG I
+		ON I.PRODUCT_NAME = U.PRODUCT_NAME
+		INNER JOIN T1_PRODUCT_SIZE S
+		ON S.PRODUCT_SIZE = U.PRODUCT_SIZE
+		WHERE U.PRODUCT_MODEL = #{modelNum} 
+		GROUP BY SIZE
+	</select>
+	
+	<!-- 상품 BUY 리스트 출력 -->
+	<select id="selectProductBuyList" parameterType="hashmap"
+		resultType="com.example.sample1.model.Product">
+		SELECT * FROM T1_PRODUCT_UPDATE U 
+		INNER JOIN T1_PRODUCT_BRAND B
+		ON U.PRODUCT_BRAND = B.PRODUCT_BRAND
+		INNER JOIN T1_PRODUCT_IMG I
+		ON I.PRODUCT_NAME = U.PRODUCT_NAME
+		INNER JOIN T1_PRODUCT_SIZE S
+		ON S.PRODUCT_SIZE = U.PRODUCT_SIZE
+		WHERE U.PRODUCT_MODEL = #{modelNum} AND U.SELLBUY = 'B'
+		GROUP BY SIZE
+	</select>
+	
+	<!-- 상품 SELL 리스트 출력 -->
+	<select id="selectProductSellList" parameterType="hashmap"
+		resultType="com.example.sample1.model.Product">
+		SELECT * FROM T1_PRODUCT_UPDATE U 
+		INNER JOIN T1_PRODUCT_BRAND B
+		ON U.PRODUCT_BRAND = B.PRODUCT_BRAND
+		INNER JOIN T1_PRODUCT_IMG I
+		ON I.PRODUCT_NAME = U.PRODUCT_NAME
+		INNER JOIN T1_PRODUCT_SIZE S
+		ON S.PRODUCT_SIZE = U.PRODUCT_SIZE
+		WHERE U.PRODUCT_MODEL = #{modelNum} AND U.SELLBUY = 'S'
+		GROUP BY SIZE
+	</select>
+	<!-- 즉시  판매가 -->
+	<select id="selectSellMinPrice" parameterType="hashmap"
+		resultType="com.example.sample1.model.Product">
+		SELECT MIN(PRODUCT_PRICE) AS SELLMINPRICE
+		FROM T1_PRODUCT_UPDATE 
+		WHERE PRODUCT_MODEL = #{modelNum} AND SELLBUY = 'B'
+	</select>
+	
+	<!-- 즉시 구매가 -->
+	<select id="selectBuyMinPrice" parameterType="hashmap"
+		resultType="com.example.sample1.model.Product">
+		SELECT MIN(PRODUCT_PRICE) AS BUYMINPRICE
+		FROM T1_PRODUCT_UPDATE 
+		WHERE PRODUCT_MODEL = #{modelNum} AND SELLBUY = 'S'
+	</select>
+	
+	<!-- 최근 거래가 -->
+	<select id="selectRecentTransaction" parameterType="hashmap"
+		resultType="com.example.sample1.model.Product">
+		SELECT  TRANSACTION_PRICE,MAX(TRANSACTION_DATE) AS MAXDATE
+		FROM T1_TRANSACTION T
+		INNER JOIN T1_PRODUCT_UPDATE U
+		ON T.PRODUCT_SELL_NUMBER = U.PRODUCT_SELL_NUMBER
+		WHERE PRODUCT_MODEL = #{modelNum}
+	</select>
+	
+	<!-- 상품 출시일 -->
+	<select id="selectProMindate" parameterType="hashmap"
+		resultType="com.example.sample1.model.Product">
+		SELECT MIN(PRODUCT_UPDATE) AS MINDATE
+		FROM T1_PRODUCT_UPDATE 
+		WHERE PRODUCT_MODEL = #{modelNum}
+	</select>
+	
+	<!-- 관심상품 조회 -->
+	<select id="selectInterest" parameterType="hashmap"
+		resultType="com.example.sample1.model.Product">
+		SELECT * 
+		FROM T1_PRODUCT_LIKE
+		WHERE USER_ID = #{uId} AND PRODUCT_MODEL = #{proNum}
+	</select>
+	
+	<!-- 관심상품 등록 -->
+	<insert id="insertInterest" parameterType="hashmap">
+		INSERT INTO T1_PRODUCT_LIKE
+		VALUES (#{proNum},#{proSize}, #{uId}, NOW())
+	</insert>
+	
+	<!-- 관심상품 해제 -->
+	<delete id="deleteInterest" parameterType="hashmap">
+		DELETE FROM T1_PRODUCT_LIKE
+		WHERE USER_ID = #{uId} AND PRODUCT_MODEL = #{proNum}
+	</delete>
+	
+	<!-- 상품 테이블 관심 cnt + 1 -->
+	<update id="plusInterestCnt" parameterType="hashmap">
+		UPDATE T1_PRODUCT_UPDATE
+			SET PRODUCT_INTEREST = PRODUCT_INTEREST + 1
+		WHERE PRODUCT_SELL_NUMBER = #{proNum}	
+	</update>
+	
+	<!-- 상품 테이블 관심 cnt - 1 -->
+	<update id="minusdateInterestCnt" parameterType="hashmap">
+		UPDATE T1_PRODUCT_UPDATE
+			SET PRODUCT_INTEREST = PRODUCT_INTEREST - 1
+		WHERE PRODUCT_SELL_NUMBER = #{proNum}	
+	</update>
+	
+	<!-- pk -->
+	<select id="selectProBuyInfo" parameterType="hashmap"
+		resultType="com.example.sample1.model.Product">
+		SELECT * FROM T1_PRODUCT_UPDATE U
+		INNER JOIN T1_PRODUCT_BRAND B
+		ON B.PRODUCT_BRAND = U.PRODUCT_BRAND
+		INNER JOIN T1_PRODUCT_IMG I
+		ON I.PRODUCT_NAME = U.PRODUCT_NAME
+		INNER JOIN T1_PRODUCT_SIZE S
+		ON S.PRODUCT_SIZE = U.PRODUCT_SIZE
+		WHERE U.PRODUCT_SELL_NUMBER = #{proNum}
+	</select>
+	
+	<!-- 상품 즉시구매 -->
+	<update id="updateUserPoint" parameterType="hashmap">
+		UPDATE T1_USER_TBL
+		SET
+			USER_POINT = USER_POINT - #{lastPay}
+		WHERE USER_ID = #{uId};
+	</update>
+	
+	<!-- 상품 구매완료 처리 -->
+	<update id="updateProductDelyn" parameterType="hashmap">
+		UPDATE T1_PRODUCT_UPDATE
+		SET
+			PRODUCT_DELYN = 'Y'
+		WHERE PRODUCT_SELL_NUMBER = #{proNum}
+	</update>
+	
+	<!-- 유저 포인트 내역 입력 -->
+	<insert id="insertUserPointTbl" parameterType="hashmap">
+		INSERT INTO T1_USER_POINT
+		VALUES (#{uId}, #{type}, #{lastPay}, NOW())
+	</insert>
+	
+	<!-- 구매완료 테이블 입력 -->
+	<insert id="insertTransaction" parameterType="hashmap">
+		INSERT INTO T1_TRANSACTION
+		VALUES (null, #{proNum}, #{uId}, #{suser}, NOW(), #{payPoint}, 'N')
+	</insert>
+</mapper>

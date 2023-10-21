@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.sample1.mapper.MainMapper">
+
+	<!-- SHOP 리스트 출력 -->
+	<select id="selectShopList" parameterType="hashmap"
+		resultType="com.example.sample1.model.Main">
+		SELECT * 
+		FROM T1_PRODUCT_UPDATE U
+		INNER JOIN T1_PRODUCT_IMG I
+		ON I.PRODUCT_NAME = U.PRODUCT_NAME
+		INNER JOIN T1_PRODUCT_BRAND B
+		ON B.PRODUCT_BRAND = U.PRODUCT_BRAND
+		LEFT JOIN(
+				SELECT PRODUCT_MODEL, MIN(PRODUCT_PRICE) AS BUYMINPRICE
+				FROM T1_PRODUCT_UPDATE 
+				WHERE SELLBUY = 'B'
+				GROUP BY PRODUCT_MODEL
+		) M ON M.PRODUCT_MODEL = U.PRODUCT_MODEL
+		WHERE 1=1
+		<if test="searchName != '' and  searchName != null">
+			AND (U.PRODUCT_NAME LIKE  CONCAT('%',#{searchName},'%')
+					 OR U.PRODUCT_KNAME LIKE CONCAT('%',#{searchName},'%')
+					 OR B.BRAND_NAME LIKE CONCAT('%',#{searchName},'%'))
+		</if>
+		<if test="sizeArr != null  and sizeArr.size() > 0">
+		AND U.PRODUCT_SIZE IN
+			<foreach item="sizeItem" index="index" open="(" close=")" separator="," collection="sizeArr">
+               #{sizeItem}
+            </foreach>
+		</if>
+		<if test="cate1Value != null and cate1Value.size() > 0">
+	    AND U.PRODUCT_CATEGORIE1 IN
+			<foreach item="cate1Item" index="index" open="(" close=")" separator="," collection="cate1Value">
+				#{cate1Item}
+			</foreach>
+		</if>
+		<if test="cate2Value != null and cate2Value.size() > 0">
+	    AND U.PRODUCT_CATEGORIE2 IN
+			<foreach item="cate2Item" index="index" open="(" close=")" separator="," collection="cate2Value">
+				#{cate2Item}
+			</foreach>
+		</if>
+		<if test="priceValue != null and priceValue.size() > 0">
+		AND U.PRODUCT_PRICE BETWEEN
+			<foreach item="priceItem" index="index" open="(" close=")" separator="," collection="priceValue">
+				#{priceItem}
+			</foreach>
+		</if>
+		GROUP BY U.PRODUCT_MODEL
+		ORDER BY U.PRODUCT_INTEREST DESC
+	</select>
+	
+	
+	<!-- 카테고리 1 -->
+	<select id="selectCategorie1" parameterType="hashmap"
+		resultType="com.example.sample1.model.Main">
+		SELECT * FROM T1_PRODUCT_CATEGORIE1	
+	</select>
+	<!-- 카테고리 2 -->
+	<select id="selectCategorie2" parameterType="hashmap"
+		resultType="com.example.sample1.model.Main">
+		SELECT * FROM T1_PRODUCT_CATEGORIE2	
+	</select>
+	
+		<!-- 남자메인테스트   -->
+	<select id="selectTmain" parameterType="hashmap" resultType="com.example.sample1.model.Main">
+		SELECT * 
+		FROM T1_PRODUCT_UPDATE P
+		INNER JOIN T1_PRODUCT_IMG I ON P.PRODUCT_NAME=I.PRODUCT_NAME
+		WHERE P.PRODUCT_CATEGORIE1 = #{cate1Num}
+		GROUP BY P.PRODUCT_MODEL
+
+	</select>
+		<!-- 남자메인테스트   -->
+	<select id="selectPmain" parameterType="hashmap" resultType="com.example.sample1.model.Main">
+		SELECT * 
+		FROM T1_PRODUCT_UPDATE P
+		INNER JOIN T1_PRODUCT_IMG I ON P.PRODUCT_NAME=I.PRODUCT_NAME
+		WHERE P.PRODUCT_CATEGORIE1 = #{cate1Num}
+		GROUP BY P.PRODUCT_MODEL
+		<if test="kind = 'p'">
+		ORDER BY PRODUCT_INTEREST DESC
+		</if>
+	</select>
+	
+	
+
+</mapper>

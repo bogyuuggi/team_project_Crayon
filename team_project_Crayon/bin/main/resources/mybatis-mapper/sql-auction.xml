@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.sample1.mapper.AuctionMapper">
+	
+	<!-- 경매 리스트 불러오기  -->
+	<select id="selectAuctionList" parameterType="hashmap" resultType="com.example.sample1.model.Auction">
+		SELECT *, COUNT(USER_ID)USERCNT
+		FROM T1_AUCTION A
+		LEFT JOIN T1_AUCTION_USER U ON A.AUCTION_NUMBER = U.AUCTION_NUMBER
+		LEFT JOIN T1_PRODUCT_IMG I ON A.AUCTION_PRODUCT = I.PRODUCT_NAME 
+		WHERE A.AUCTION_ENDYN='N'
+		GROUP BY A.AUCTION_NUMBER	
+	</select>
+	
+	<!-- 경매 상세정보 불러오기  -->
+	<select id="selectAuctionInfo" parameterType="hashmap" resultType="com.example.sample1.model.Auction">
+		SELECT *, COUNT(USER_ID)USERCNT
+		FROM T1_AUCTION A
+		LEFT JOIN T1_AUCTION_USER U ON A.AUCTION_NUMBER = U.AUCTION_NUMBER
+		LEFT JOIN T1_AUCTION_LIKE L ON A.AUCTION_NUMBER = L.AUCTION_NUMBER
+		INNER JOIN T1_PRODUCT_IMG I ON A.AUCTION_PRODUCT = I.PRODUCT_NAME 
+		WHERE A.AUCTION_NUMBER = #{auctionNumber} 
+		GROUP BY A.AUCTION_NUMBER	
+		UNION
+		SELECT *, COUNT(USER_ID)USERCNT
+		FROM T1_AUCTION A
+		LEFT JOIN T1_AUCTION_USER U ON A.AUCTION_NUMBER = U.AUCTION_NUMBER
+		LEFT JOIN T1_AUCTION_LIKE L ON A.AUCTION_NUMBER = L.AUCTION_NUMBER
+		INNER JOIN T1_PRODUCT_IMG I ON A.AUCTION_PRODUCT = I.PRODUCT_NAME 
+		WHERE A.AUCTION_NUMBER = #{auctionNumber} AND U.USER_ID=#{uId} 
+		GROUP BY A.AUCTION_NUMBER	
+		LIMIT 1
+	</select>
+	
+	<!-- 경매 입찰 등록하기 -->
+	<insert id="insertAuctionPrice" parameterType="hashmap">
+		INSERT INTO T1_AUCTION_USER
+		VALUES (NULL,#{auctionNumber},#{userId},#{aJoinPrice},CURDATE(),'Y')
+	</insert>
+	
+		<!-- 경매 입찰정보 불러오기  -->
+	<select id="selectAuctionCheck" parameterType="hashmap" resultType="com.example.sample1.model.Auction">
+		SELECT *
+		FROM T1_AUCTION A
+		INNER JOIN T1_AUCTION_USER U ON A.AUCTION_NUMBER = U.AUCTION_NUMBER
+		WHERE A.AUCTION_NUMBER = #{auctionNumber} AND U.USER_ID = #{userId}
+ 		GROUP BY A.AUCTION_NUMBER	
+	</select>
+	<!-- 모델번호로 물품 정보 가져오기  -->
+	<select id="selectProductInfo" parameterType="hashmap" resultType="com.example.sample1.model.Product">
+		SELECT * 
+		FROM T1_PRODUCT_UPDATE U 
+		INNER JOIN T1_PRODUCT_IMG I ON U.PRODUCT_NAME = I.PRODUCT_NAME
+		INNER JOIN T1_PRODUCT_BRAND B ON U.PRODUCT_BRAND = B.PRODUCT_BRAND
+		WHERE PRODUCT_MODEL =#{pModel}
+		LIMIT 1;
+	</select>
+	
+	<!-- 브랜드 조회 -->
+	<select id="selectBrand" resultType="com.example.sample1.model.Product">
+		SELECT *
+		FROM T1_PRODUCT_BRAND
+	</select>
+	
+	<!-- 경매 입찰 등록하기 -->
+	<insert id="insertAuctionP" parameterType="hashmap">
+		INSERT INTO T1_AUCTION
+		VALUES (NULL,#{productName},#{productSize},#{auctionStartPrice},#{auctionMaxPrice},#{auctionStartDate},#{auctionEndDate},'N')
+	</insert>
+	
+	<!-- 경매 참가자 리스트 불러오기  -->
+	<select id="selectAuctionUserJoinList" parameterType="hashmap" resultType="com.example.sample1.model.Auction">
+    SELECT AUCTION_NUMBER, USER_ID , USER_POINT, AUCTION_DATE
+    FROM T1_AUCTION_USER
+    WHERE AUCTION_NUMBER = #{auctionNumber}
+	</select>
+	<!-- 경매물품 관심 등록하기 -->
+	<insert id="insertAuctionLike" parameterType="hashmap">
+		INSERT INTO T1_AUCTION_LIKE
+		VALUES (#{auctionNumber},#{uId},CURDATE())
+	</insert>
+	<delete id="deleteAuctionLike" parameterType="hashmap">
+	 DELETE FROM T1_AUCTION_LIKE
+    WHERE AUCTION_NUMBER = #{auctionNumber} AND A_LIKE_USER = #{uId}
+	</delete>
+	
+	<update id="endAuction" parameterType="hashmap">
+		UPDATE T1_AUCTION
+		SET
+			AUCTION_ENDYN='Y'
+		WHERE AUCTION_NUMBER = #{auctionNumber} 
+	</update>
+	<insert id="insertAuctionResult" parameterType="hashmap">
+		INSERT INTO T1_AUCTION_RESULT
+		VALUES (#{auctionNumber},#{auctionProduct},#{userId},#{userPoint},CURDATE())
+	</insert>
+	
+	<select id="selectAuctionEndInfo" parameterType="hashmap" resultType="com.example.sample1.model.Auction">
+		SELECT *
+		FROM T1_AUCTION A
+		LEFT JOIN T1_AUCTION_USER U ON A.AUCTION_NUMBER = U.AUCTION_NUMBER	
+		WHERE A.AUCTION_NUMBER=#{auctionNumber}
+		ORDER BY U.USER_POINT DESC
+		LIMIT 1;
+	</select>
+	<!-- 경매 리스트 불러오기  -->
+	<select id="selectProInfo" parameterType="hashmap" resultType="com.example.sample1.model.Product">
+		SELECT *
+		FROM T1_AUCTION A
+		INNER JOIN T1_PRODUCT_UPDATE P ON A.AUCTION_PRODUCT = P.PRODUCT_NAME
+		INNER JOIN T1_PRODUCT_SIZE S ON P.PRODUCT_SIZE= S.PRODUCT_SIZE
+		INNER JOIN T1_PRODUCT_CATEGORIE2 C ON P.PRODUCT_CATEGORIE2 =C.CATEGORIE2
+		WHERE A.AUCTION_PRODUCT = #{proname}
+		GROUP BY  A.AUCTION_PRODUCT
+	</select>
+	
+
+	
+</mapper>
