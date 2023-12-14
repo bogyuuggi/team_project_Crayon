@@ -119,6 +119,247 @@
   </tr>
 </table>
 
+## 🚀 내 역할
+### 회원가입
+1. 아이디 중복 방지를 예방하기 위해 중복체크 서비스도 제공합니다.
+```
+fnCheck : function(){
+			var self = this;
+			var nparmap = {uId : self.user.userId};
+			console.log(self.user.userId);
+			$.ajax({
+                url : "/user/selectId.dox",
+                dataType:"json",	
+                type : "POST", 
+                data : nparmap,
+                success : function(data) { 
+                	console.log(data.info);
+                	if(data.info != undefined){
+                		alert("중복된 아이디가 있습니다");
+                	} else {
+                		alert("사용 가능한 아이디입니다.");
+                		self.joinFlg = true;
+                	}  
+                }
+            });
+```
+2. 정규식을 활용하여 조건을 만족할 때에만 회원가입이 원할하게 진행 될 수 있게 서비스를 제공합니다.
+```
+fnPwdCheck : function() {
+			var self = this;
+			/* var userPwd = self.user.userPwd1; */
+			var regex = /^[a-zA-Z0-9]{8,16}$/; // 비밀번호 정규식
+			if(!regex.test(self.user.userPwd1)){
+				self.message = "비밀번호는 영문 대소문자와 숫자 포함 8자리 이상이어야 합니다.";
+			}else {
+				self.message = "";
+			}
+```
+### 스타일 게시판 (사진 업로드 위주의 sns형 커뮤니티기반의 리뷰게시판)
+1. 게시글 내용 및 태그상품정보 업로드가 가능합니다.
+```
+	@RequestMapping(value = "/addStyle.dox", method = RequestMethod.POST, produces = "application/json;charset=UTF-8")
+	@ResponseBody
+	public String addProduct(Model model, @RequestParam HashMap<String, Object> map) throws Exception {
+		HashMap<String, Object> resultMap = new HashMap<String, Object>();
+		resultMap = styleService.addStyle(map);
+		return new Gson().toJson(resultMap);
+	}
+```
+2. 스타일 사진 업로드가 가능합니다.
+```
+	@RequestMapping(value = "/addStyleImg.dox")
+	public String styleupload(@RequestParam("file1") MultipartFile multi, @RequestParam("idx") int idx, HttpServletRequest request, HttpServletResponse response, Model model) {
+		String url = null;
+		String path = "c:\\img";
+		try {
+			String uploadpath = path;
+			String originFilename = multi.getOriginalFilename();
+			String extName = originFilename.substring(originFilename.lastIndexOf("."), originFilename.length());
+			long size = multi.getSize();
+			String saveFileName = genSaveFileName(extName);
+
+			String path2 = System.getProperty("user.dir");
+			if (!multi.isEmpty()) {
+				File file = new File(path2 + "\\src\\main\\webapp\\img\\style", saveFileName);
+			    multi.transferTo(file);
+
+			    HashMap<String, Object> map = new HashMap<String, Object>();	
+			    map.put("sImgName", saveFileName);
+			    map.put("sImgPath", "..\\img\\style\\" + saveFileName); // Set the correct image path
+			    map.put("idx", idx);
+
+			    // Insert query execution
+			    styleService.addStyleImg(map);
+
+			    model.addAttribute("sImgName", multi.getOriginalFilename());
+			    model.addAttribute("uploadPath", file.getAbsolutePath());
+
+			    return "redirect:mypage.do";
+			}
+		} catch (Exception e) {
+			System.out.println(e);
+		}
+		return "redirect:mypage.do";
+	}
+		// 현재 시간을 기준으로 파일 이름 생성 -> 파일 이름 중복 방지
+	    private String genSaveFileName(String extName) {
+	        String sImgName = "";
+	        
+	        Calendar calendar = Calendar.getInstance();
+	        sImgName += calendar.get(Calendar.YEAR);
+	        sImgName += calendar.get(Calendar.MONTH);
+	        sImgName += calendar.get(Calendar.DATE);
+	        sImgName += calendar.get(Calendar.HOUR);
+	        sImgName += calendar.get(Calendar.MINUTE);
+	        sImgName += calendar.get(Calendar.SECOND);
+	        sImgName += calendar.get(Calendar.MILLISECOND);
+	        sImgName += extName;
+	        
+	        return sImgName;
+	    }
+```
+### 이미지를 데이터베이스에 업로드하고 출력하는 기능 구현
+1. 상품 이미지 출력이 가능합니다.
+```
+ 	@RequestMapping(value = "/productImg.dox", method = RequestMethod.POST, produces = "application/json;charset=UTF-8")
+ 	@ResponseBody
+ 	public String productImg(Model model, @RequestParam HashMap<String, Object> map) throws Exception {
+ 		HashMap<String, Object> resultMap = new HashMap<String, Object>();
+ 		Product img =productService.viewProductImg(map);
+ 		resultMap.put("img",img);
+ 		return new Gson().toJson(resultMap);
+ 	}
+```
+2. 상품이미지 업로드가 가능합니다.
+```
+	@RequestMapping(value = "/fileUpload.dox")
+	public String result(@RequestParam("file1") MultipartFile multi, @RequestParam("productName") String productName, HttpServletRequest request, HttpServletResponse response, Model model) {
+	    String url = null;
+	    String path = "c:\\img";
+	    try {
+	        String uploadpath = path;
+	        String originFilename = multi.getOriginalFilename();
+	        String extName = originFilename.substring(originFilename.lastIndexOf("."), originFilename.length());
+	        long size = multi.getSize();
+	        String saveFileName = genSaveFileName(extName);
+
+	        String path2 = System.getProperty("user.dir");
+	        if (!multi.isEmpty()) {
+	        	File file = new File(path2 + "\\src\\main\\webapp\\img\\product", saveFileName);
+	            multi.transferTo(file);
+
+	            HashMap<String, Object> map = new HashMap<String, Object>();	
+	            map.put("pImgName", saveFileName);
+	            map.put("pImgPath", "..\\img\\product\\" + saveFileName); // Set the correct image path
+	            map.put("pName", productName);
+
+	            // Insert query execution
+	            productService.addProductImg(map);
+
+	            model.addAttribute("pImgName", multi.getOriginalFilename());
+	            model.addAttribute("uploadPath", file.getAbsolutePath());
+
+	            return "redirect:mypage.do";
+	        }
+	    } catch (Exception e) {
+	        System.out.println(e);
+	    }
+	    return "redirect:mypage.do";
+	}
+// 상품 이미지 보여주기
+ 	@RequestMapping(value = "/productImg.dox", method = RequestMethod.POST, produces = "application/json;charset=UTF-8")
+ 	@ResponseBody
+ 	public String productImg(Model model, @RequestParam HashMap<String, Object> map) throws Exception {
+ 		HashMap<String, Object> resultMap = new HashMap<String, Object>();
+ 		Product img =productService.viewProductImg(map);
+ 		resultMap.put("img",img);
+ 		return new Gson().toJson(resultMap);
+ 	}
+// 파일 업로드 이미지 DB입력 이전 브라우저 출력을 위한 스크립트 함수
+  const inputFile = document.getElementById('file1');
+  const uploadedImage = document.getElementById('uploaded-image');
+  
+  
+  inputFile.addEventListener('change', function () {
+  const fileReader = new FileReader();
+  fileReader.onloadend = function () {
+  	uploadedImage.src = fileReader.result;
+  };
+  if (this.files[0]) {
+  	fileReader.readAsDataURL(this.files[0]);
+  }
+  });
+```
+### 상품및 상품정보를 데이터베이스에 등록하는 기능 구현
+1. 상품 관련 정보를 데이터베이스 등록할 수 있습니다.
+```
+	@RequestMapping(value = "/addProduct.dox", method = RequestMethod.POST, produces = "application/json;charset=UTF-8")
+	@ResponseBody
+	public String addProduct(Model model, @RequestParam HashMap<String, Object> map) throws Exception {
+		HashMap<String, Object> resultMap = new HashMap<String, Object>();
+		resultMap = productService.addProduct(map);
+		return new Gson().toJson(resultMap);
+	}
+```
+### 상품 판매 프로세스 구현
+1. 상품의 판매 등록 시 기존 데이터베이스에서 해당 상품관련 정보를 불러오고 사용자 조건에 맞게 판매를 등록 할 수 있습니다.
+```
+//상품 정보 불러오기
+			fnProList : function(){
+	    		var self = this; 
+	            var nparmap = {modelNum : self.modelNum};
+	             $.ajax({
+	                 url : "/productBuyList.dox",
+	                 dataType:"json",	
+	                 type : "POST", 
+	                 data : nparmap,
+	                 success : function(data) { 
+	                 	self.proList = data.buyList;
+	                 	self.proInfo = data.buyList[0];
+	                 	if(data.buyList != "" &&  data.buyList != null){
+	                 		self.buyFlg = true;
+	                 	}else{
+	                 		self.buyFlg = false;
+	                 		
+	                 		alert("즉시 판매 상품이 없습니다. \n판매입찰 페이지로 이동합니다.");
+	                 		location.href = "/productRegister.do";
+	                 	}
+	                 	console.log(self.proList);
+	                 	console.log(self.proInfo);
+	                 	
+	                 }
+	             }); 
+	    	},
+	     	// 사이즈 조회
+			fnGetSize : function () {
+				var self = this;
+				var nparmap = {};
+				$.ajax({
+					url : "size.dox",
+					dataType : "json",
+					type : "POST",
+					data : nparmap,
+					success : function(data){
+						self.sList = data.size;
+						console.log(data);
+					}
+				})
+			},
+			// 사이즈 버튼 클릭
+			selectSize : function(proNum) {
+				var self = this;
+				self.selectedSize = proNum;
+	       		console.log(self.selectedSize);
+	   		},
+```
+## ✏️ 트러블 슈팅
+### 상품 정보 등록시 카테고리 이슈
+카테고리1 ,카테고리2 이와 같이 1번 옵션에서 값을 고르면 유기적으로 연관된 2번옵션의 값이 출력되어져야 하는데 작업 진행시 점검해보니까 1번 카테고리 값과 무관하게 2번 카테고리값이 출력되고 있었습니다.
+
+### 회원가입 아이디, 비밀번호 무결성 관리
+
+
 ## 📂프로젝트 구성도
 > ERD
 > 
@@ -150,3 +391,8 @@
 ![마이페이지_주소록_새 배송지 추가2](https://github.com/wuuuugi/shopping/assets/137017155/d16061f9-19db-4083-a5f7-f11b579fafd8)
 ![스타일 게시글](https://github.com/wuuuugi/shopping/assets/137017155/8f1ef33e-2120-4ac9-9f6b-f164c6b7a40c)
 ![스타일메인](https://github.com/wuuuugi/shopping/assets/137017155/830026e4-2ffb-4a39-9b7e-6bd6f1bec2f8)
+
+<br>
+<br>
+<br>
+<br>
